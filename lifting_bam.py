@@ -8,28 +8,37 @@ logger = logging.getLogger("Liftover")
 name_regex = re.compile("^chr[0-9A-Za-z]+:[0-9]+-[0-9]+$|^[0-9A-Za-z]+:[0-9]+-[0-9]+$")
 
 
-def parse_ref_name(ref_name):
+def parse_locus(locus_string):
     """
+    parsing a string to extract chromosome, start and end
+
     :param str ref_name: reference name must be in the pattern of "chromosom:start-end" (e.g. chr1:100-1000)
     :return: (chrom, start, end)
     :rtype: Tuple(str, int, int)
     """
-    if not name_regex.search(ref_name):
+    if not name_regex.search(locus_string):
         raise ValueError(
             f"reference name is not in the pattern of {name_regex.pattern}"
         )
     else:
-        chrom, coordinates = ref_name.split(":")
+        chrom, coordinates = locus_string.split(":")
         start, end = coordinates.split("-")
         return chrom, int(start), int(end)
 
 
 def liftover_alignment(header, in_alignment):
     """
+    liftover a pysam alignedsegment
+
+    we only support lifting the whole segment by changing the chromosome name and shifting the start position to the right
+    lets say if a alignment is mapping at a contig "chr1:100-1000" at position 2, then we will lift that alignment to chr1:102
+
     :param pysam.libcalignmentfile.AlignmentHeader header: the header of the target genome
     :param pysam.libcalignedsegment.AlignedSegment in_alignment: the input alignment that needed to be lifted
+    :return: lifted alignment
+    :rtype: pysam.libcalignedsegment.AlignedSegment
     """
-    chrom, start, end = parse_ref_name(in_alignment.reference_name)
+    chrom, start, end = parse_locus(in_alignment.reference_name)
     lifted_aln = pysam.AlignedSegment(header)
     lifted_aln.reference_name = chrom
     lifted_aln.query_name = in_alignment.query_name
