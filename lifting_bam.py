@@ -74,10 +74,12 @@ def liftover(gene_bam, genome_bam, out_bam):
         with pysam.AlignmentFile(
             "out.bam", "wb", template=genome_alignments
         ) as out_bam_fh:
-            for aln_count, aln in enumerate(gene_alignments):
+            aln_count = 0
+            for aln in gene_alignments:
                 lifted_aln = liftover_alignment(genome_alignments.header, aln)
                 out_bam_fh.write(lifted_aln)
-    logger.info(f"Lifted {aln_count+1} alignments to {out_bam}")
+                aln_count += 1
+    logger.info(f"Lifted {aln_count} alignments to {out_bam}")
 
 
 if __name__ == "__main__":
