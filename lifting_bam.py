@@ -64,15 +64,15 @@ def liftover(gene_bam, genome_bam, out_bam):
 
     The input alignments should map to a reference with the names in the pattern of "chromosom:start-end"
 
-    :param str gene_bam: bam file storing alignments mapping to the gene segment
-    :param str genome_bam: bam file storing genome alignments
-    :param str out_bam: output bam file with lifted over alignments
+    :param str gene_bam: bam file path storing alignments mapping to the gene segment
+    :param str genome_bam: bam file path storing genome alignments
+    :param str out_bam: output bam file path to write the lifted over alignments to
     """
     with pysam.AlignmentFile(genome_bam) as genome_alignments, pysam.AlignmentFile(
         gene_bam
     ) as gene_alignments:
         with pysam.AlignmentFile(
-            "out.bam", "wb", template=genome_alignments
+            out_bam, "wb", template=genome_alignments
         ) as out_bam_fh:
             aln_count = 0
             for aln in gene_alignments:
