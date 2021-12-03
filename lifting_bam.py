@@ -76,7 +76,7 @@ def liftover(gene_bam, genome_bam, out_bam):
             for aln_count, aln in enumerate(gene_alignments):
                 lifted_aln = liftover_alignment(genome_alignments.header, aln)
                 out_bam_fh.write(lifted_aln)
-    logger.info(f"Lifted {aln_count+1} to {out_bam}")
+    logger.info(f"Lifted {aln_count+1} alignments to {out_bam}")
 
 
 if __name__ == "__main__":
