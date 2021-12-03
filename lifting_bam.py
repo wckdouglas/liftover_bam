@@ -16,9 +16,10 @@ def parse_locus(locus_string):
     :return: (chrom, start, end)
     :rtype: Tuple(str, int, int)
     """
+    locus_string = str(locus_string)
     if not name_regex.search(locus_string):
         raise ValueError(
-            f"reference name is not in the pattern of {name_regex.pattern}"
+            f"reference name is not in the pattern of {name_regex.pattern}: {locus_string}"
         )
     else:
         chrom, coordinates = locus_string.split(":")
