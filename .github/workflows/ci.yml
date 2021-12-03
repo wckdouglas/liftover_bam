@@ -29,10 +29,14 @@ jobs:
         with:
           poetry-version: 1.1.4
 
+      - name: Install bwa/samtools
+        run: |
+          sudo apt-get install -y bwa samtools
 
       - name: Install dependencies
         run: |
           poetry install
+
       - name: Test
         run: |
           make test
