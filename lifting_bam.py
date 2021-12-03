@@ -43,7 +43,7 @@ def liftover_alignment(header, in_alignment):
     lifted_aln.reference_name = chrom
     lifted_aln.query_name = in_alignment.query_name
     lifted_aln.query_sequence = in_alignment.seq
-    lifted_aln.reference_start = in_alignment.reference_start + start
+    lifted_aln.reference_start = in_alignment.reference_start + start - 1
     lifted_aln.cigar = in_alignment.cigar
     lifted_aln.flag = in_alignment.flag
     lifted_aln.mapping_quality = in_alignment.mapping_quality
