@@ -76,9 +76,10 @@ def liftover(gene_bam, genome_bam, out_bam):
         ) as out_bam_fh:
             aln_count = 0
             for aln in gene_alignments:
-                lifted_aln = liftover_alignment(genome_alignments.header, aln)
-                out_bam_fh.write(lifted_aln)
-                aln_count += 1
+                if not aln.is_unmapped:
+                    lifted_aln = liftover_alignment(genome_alignments.header, aln)
+                    out_bam_fh.write(lifted_aln)
+                    aln_count += 1
     logger.info(f"Lifted {aln_count} alignments to {out_bam}")
 
 
