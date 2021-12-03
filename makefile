@@ -1,6 +1,9 @@
 all: alignments/ref1.bam alignments/ref2.bam
 
-ref/ref1.fa.amb:
+ref/ref1.fa:
+	echo "chr3:28-48" | samtools faidx -r - ref/ref2.fa > ref/ref1.fa
+
+ref/ref1.fa.amb: ref/ref1.fa
 	bwa index ref/ref1.fa
 
 ref/ref2.fa.amb:
@@ -11,3 +14,10 @@ alignments/ref1.bam: ref/ref1.fa.amb
 
 alignments/ref2.bam: ref/ref2.fa.amb
 	bwa mem -A 1 -T 5 -k4  ref/ref2.fa query.fa | samtools view -b > alignments/ref2.bam
+
+out.bam: alignments/ref1.bam alignments/ref2.bam
+	python lifting_bam.py	
+
+.PHONY: test
+test: out.bam
+	samtools view -h out.bam  | diff - expected.sam
