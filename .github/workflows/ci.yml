@@ -39,4 +39,4 @@ jobs:
 
       - name: Test
         run: |
-          make test
+          make -j4 test
