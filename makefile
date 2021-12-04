@@ -21,3 +21,7 @@ out.bam: alignments/ref1.bam alignments/ref2.bam
 .PHONY: test
 test: out.bam
 	samtools view -h out.bam | grep -v "bwa\|samtools"  | diff - test/expected.sam
+
+.PHONY: clean
+clean: 
+	rm ref/ref1* ref/ref2.fa.* alignments/*bam out.bam
