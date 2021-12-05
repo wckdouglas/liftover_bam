@@ -43,4 +43,4 @@ jobs:
 
       - name: Unit test
         run: |
-          pytest -l  -rPap -vvv -p no:warnings
+          poetry run pytest -l  -rPap -vvv -p no:warnings
