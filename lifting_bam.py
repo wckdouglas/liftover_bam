@@ -5,7 +5,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("Liftover")
 
-name_regex = re.compile("^chr[0-9A-Za-z]+:[0-9]+-[0-9]+$|^[0-9A-Za-z]+:[0-9]+-[0-9]+$")
+NAME_REGEX = re.compile("^chr[0-9A-Za-z]+:[0-9]+-[0-9]+$|^[0-9]+:[0-9]+-[0-9]+$")
 
 
 def parse_locus(locus_string):
@@ -17,9 +17,9 @@ def parse_locus(locus_string):
     :rtype: Tuple(str, int, int)
     """
     locus_string = str(locus_string)
-    if not name_regex.search(locus_string):
+    if not NAME_REGEX.search(locus_string):
         raise ValueError(
-            f"reference name is not in the pattern of {name_regex.pattern}: {locus_string}"
+            f"reference name is not in the pattern of {NAME_REGEX.pattern}: {locus_string}"
         )
     else:
         chrom, coordinates = locus_string.split(":")

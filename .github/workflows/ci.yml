@@ -40,3 +40,7 @@ jobs:
       - name: Test
         run: |
           make -j4 test
+
+      - name: Unit test
+        run: |
+          pytest -l  -rPap -vvv -p no:warnings
