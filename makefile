@@ -1,7 +1,7 @@
 all: alignments/ref1.bam alignments/ref2.bam
 
 ref/ref1.fa:
-	python test/make.py > ref/ref1.fa
+	python test/make.py ref/ref2.fa > ref/ref1.fa
 	
 
 ref/ref1.fa.amb: ref/ref1.fa
