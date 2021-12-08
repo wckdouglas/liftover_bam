@@ -1,6 +1,8 @@
-import re
-import pysam
 import logging
+import re
+
+import pysam
+from pydantic import FilePath, validate_arguments
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("Liftover")
@@ -8,7 +10,42 @@ logger = logging.getLogger("Liftover")
 NAME_REGEX = re.compile("^chr[0-9A-Za-z]+:[0-9]+-[0-9]+$|^[0-9]+:[0-9]+-[0-9]+$")
 
 
-def parse_locus(locus_string):
+@validate_arguments
+def make_ref_fasta(
+    reference_fasta: FilePath, chrom: str, start: int, stop: int, padding: int = 5
+):
+    """
+    extract sequence from reference fasta file
+
+    :param str reference_fasta: file path to the reference fasta file
+    :param str chrom: chromosome of the extracted locus
+    :param int start: start position of the extracted locus
+    :param int stop: stop position of the extracted locus
+    :param int padding: padding position to add in front of start and after stop
+    """
+    if (start - padding) < 0:
+        raise ValueError(
+            f"start ({start}) must be larger than or equal to padding ({padding})"
+        )
+
+    if stop <= start:
+        raise ValueError(f"stop ({stop}) must be larger than start {start}")
+
+    padded_start = start - padding
+    padded_stop = stop + padding
+    fa = pysam.Fastafile(reference_fasta)
+    if padded_stop > fa.get_reference_length(chrom):
+        raise ValueError(
+            f"stop ({stop}) + padding ({padding}) must be smaller than contig size ({chrom})"
+        )
+
+    sequence = fa.fetch(chrom, padded_start, padded_stop)
+    fa.close()
+    return f">{chrom}:{padded_start}-{padded_stop}\n{sequence}"
+
+
+@validate_arguments
+def parse_locus(locus_string: str):
     """
     parsing a string to extract chromosome, start and end
 
@@ -30,30 +67,35 @@ def parse_locus(locus_string):
 def liftover_alignment(header, in_alignment):
     """
     liftover a pysam alignedsegment
-
     we only support lifting the whole segment by changing the chromosome name and shifting the start position to the right
     lets say if a alignment is mapping at a contig "chr1:100-1000" at position 2, then we will lift that alignment to chr1:102
-
+    if an alignment is not aligned, it will write out as it is
     :param pysam.libcalignmentfile.AlignmentHeader header: the header of the target genome
     :param pysam.libcalignedsegment.AlignedSegment in_alignment: the input alignment that needed to be lifted
     :return: lifted alignment
     :rtype: pysam.libcalignedsegment.AlignedSegment
     """
+    if in_alignment.is_unmapped:
+        return in_alignment
+
     chrom, start, end = parse_locus(in_alignment.reference_name)
     lifted_aln = pysam.AlignedSegment(header)
     lifted_aln.reference_name = chrom
     lifted_aln.query_name = in_alignment.query_name
     lifted_aln.query_sequence = in_alignment.seq
+    lifted_aln.qual = in_alignment.qual
     lifted_aln.reference_start = in_alignment.reference_start + start - 1
     lifted_aln.cigar = in_alignment.cigar
     lifted_aln.flag = in_alignment.flag
     lifted_aln.mapping_quality = in_alignment.mapping_quality
+    lifted_aln.template_length = in_alignment.template_length
     for tag_id, tag_value in in_alignment.tags:
         lifted_aln.set_tag(tag_id, tag_value)
     return lifted_aln
 
 
-def liftover(gene_bam, genome_bam, out_bam):
+@validate_arguments
+def liftover(gene_bam: FilePath, genome_bam: FilePath, out_bam: str):
     """
     Lifting alignments mapping to gene segments to whole genome
 

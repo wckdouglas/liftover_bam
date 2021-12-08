@@ -4,9 +4,106 @@ from collections import OrderedDict
 
 import pysam
 import pytest
+from typing import Dict
+from unittest.mock import patch
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from lifting_bam import liftover_alignment, parse_locus, NAME_REGEX
+from lifting_bam import NAME_REGEX, liftover_alignment, make_ref_fasta, parse_locus
+
+
+class FakeFastaFile:
+    def __init__(self, seqs: Dict):
+        self.seqs = seqs
+
+    def fetch(self, chrom, start, end):
+        return self.seqs[chrom][start:end]
+
+    def get_reference_length(self, chrom):
+        return len(self.seqs[chrom])
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return self
+
+    def close(self):
+        return self
+
+
+@pytest.mark.parametrize(
+    "seqs,chrom,start,stop,pad,expected_name,expected_seq",
+    [
+        (
+            {"chr1": "ACTGACTGACTG", "chr2": "TTTGGGTTTGGG"},
+            "chr1",
+            2,
+            4,
+            2,
+            "chr1:0-6",
+            "ACTGAC",
+        ),
+        (
+            {"chr1": "ACTGACTGACTG", "chr2": "TTTGGGTTTGGGTGC"},
+            "chr2",
+            5,
+            10,
+            4,
+            "chr2:1-14",
+            "TTGGGTTTGGGTG",
+        ),
+    ],
+)
+def test_make_ref_fasta(seqs, chrom, start, stop, pad, expected_name, expected_seq):
+    expected_out = f">{expected_name}\n{expected_seq}"
+    with patch("lifting_bam.pysam.Fastafile", return_value=FakeFastaFile(seqs)):
+        assert (
+            make_ref_fasta(__file__, chrom=chrom, start=start, stop=stop, padding=pad)
+            == expected_out
+        )
+
+
+@pytest.mark.parametrize(
+    "test_case, seqs,chrom,start,stop,pad,expected_error_message",
+    [
+        (
+            "start - padding < 0",
+            {"chr1": "ACTGACTGACTG", "chr2": "TTTGGGTTTGGG"},
+            "chr1",
+            2,
+            4,
+            3,
+            "must be larger than or equal to padding",
+        ),
+        (
+            "stop <= start",
+            {"chr1": "ACTGACTGACTG", "chr2": "TTTGGGTTTGGGTGC"},
+            "chr2",
+            10,
+            5,
+            6,
+            "must be larger than start",
+        ),
+        (
+            "padding + stop > reference size",
+            {"chr1": "ACTGACTGACTG", "chr2": "TTTGGGTTTGGGTGC"},
+            "chr2",
+            9,
+            10,
+            7,
+            "must be smaller than contig size",
+        ),
+    ],
+)
+def test_make_ref_fasta_error(
+    test_case, seqs, chrom, start, stop, pad, expected_error_message
+):
+    with patch(
+        "lifting_bam.pysam.Fastafile", return_value=FakeFastaFile(seqs)
+    ), pytest.raises(ValueError) as e:
+        make_ref_fasta(__file__, chrom=chrom, start=start, stop=stop, padding=pad)
+
+    assert expected_error_message in str(e), f"Fail to capture {test_case}"
 
 
 @pytest.fixture(scope="module")
