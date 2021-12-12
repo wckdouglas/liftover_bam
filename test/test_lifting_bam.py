@@ -175,7 +175,6 @@ def make_alignment(
     subseq_start,
     start,
     header,
-    mate_reference_name=None,
     mate_reference_start=None,
 ):
     subseq_coordinate = f"{subseq_chrom}:{subseq_start}-{subseq_start+100}"
@@ -198,27 +197,25 @@ def make_alignment(
     mock_alignment.cigar = [(0, 10)]
     mock_alignment.flag = 0
     mock_alignment.mapping_quality = 60
-    mock_alignment.next_reference_name = mate_reference_name
-    mock_alignment.in_alignment.next_reference_start = mate_reference_start
+    if mate_reference_start is not None:
+        mock_alignment.next_reference_name = subseq_coordinate
+        mock_alignment.next_reference_start = mate_reference_start
     return mock_alignment
 
 
 @pytest.mark.parametrize(
-    "subseq_chrom, subseq_start, start, mate_reference_name, mate_reference_start",
+    "test_case,subseq_chrom, subseq_start, start, mate_reference_start",
     [
-        ("chr1", 10, 10, None, None),
-        ("chr1", 10, 10, , 12),
-        ("chr2", 20, 5, None, None),
-        ("chr3", 30, 12, None, None),
-
+        ("Singleton alignment", "chr1", 10, 10, None),
+        ("Paired end alignment", "chr1", 10, 10, 12),
     ],
 )
 def test_liftover_alignment(
     mock_header,
+    test_case,
     subseq_chrom,
     subseq_start,
     start,
-    mate_reference_name,
     mate_reference_start,
 ):
     alignment = make_alignment(
@@ -226,9 +223,17 @@ def test_liftover_alignment(
         subseq_start,
         start,
         mock_header,
-        mate_reference_name=mate_reference_name,
         mate_reference_start=mate_reference_start,
     )
     lifted_alignment = liftover_alignment(mock_header, alignment)
-    assert lifted_alignment.reference_name == subseq_chrom
-    assert lifted_alignment.reference_start == start + subseq_start
+    assert lifted_alignment.reference_name == subseq_chrom, f"Failed for {test_case}"
+    assert (
+        lifted_alignment.reference_start == start + subseq_start
+    ), f"Failed for {test_case}"
+    if mate_reference_start is not None:
+        assert (
+            lifted_alignment.next_reference_start == mate_reference_start + subseq_start
+        ), f"Failed for {test_case}"
+        assert (
+            lifted_alignment.next_reference_name == subseq_chrom
+        ), f"Failed for {test_case}"
