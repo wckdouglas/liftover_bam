@@ -13,9 +13,7 @@ NAME_REGEX = re.compile("^chr[0-9A-Za-z]+:[0-9]+-[0-9]+$|^[0-9]+:[0-9]+-[0-9]+$"
 
 
 @validate_arguments
-def make_ref_fasta(
-    reference_fasta: FilePath, chrom: str, start: int, stop: int, padding: int = 5
-) -> str:
+def make_ref_fasta(reference_fasta: FilePath, chrom: str, start: int, stop: int, padding: int = 5) -> str:
     """
     extract sequence from reference fasta file
 
@@ -26,9 +24,7 @@ def make_ref_fasta(
     :param int padding: padding position to add in front of start and after stop
     """
     if (start - padding) < 0:
-        raise ValueError(
-            f"start ({start}) must be larger than or equal to padding ({padding})"
-        )
+        raise ValueError(f"start ({start}) must be larger than or equal to padding ({padding})")
 
     if stop <= start:
         raise ValueError(f"stop ({stop}) must be larger than start {start}")
@@ -37,9 +33,7 @@ def make_ref_fasta(
     padded_stop = stop + padding
     fa = pysam.Fastafile(reference_fasta)
     if padded_stop > fa.get_reference_length(chrom):
-        raise ValueError(
-            f"stop ({stop}) + padding ({padding}) must be smaller than contig size ({chrom})"
-        )
+        raise ValueError(f"stop ({stop}) + padding ({padding}) must be smaller than contig size ({chrom})")
 
     sequence = fa.fetch(chrom, padded_start, padded_stop)
     fa.close()
@@ -57,9 +51,7 @@ def parse_locus(locus_string: str) -> Tuple[str, int, int]:
     """
     locus_string = str(locus_string)
     if not NAME_REGEX.search(locus_string):
-        raise ValueError(
-            f"reference name is not in the pattern of {NAME_REGEX.pattern}: {locus_string}"
-        )
+        raise ValueError(f"reference name is not in the pattern of {NAME_REGEX.pattern}: {locus_string}")
     else:
         chrom, coordinates = locus_string.split(":")
         start, end = coordinates.split("-")
@@ -96,12 +88,8 @@ def liftover_alignment(header, in_alignment):  # type: ignore
 
     # for paired end
     if in_alignment.next_reference_name:
-        mate_chrom, mate_subseq_start, mate_subseq_end = parse_locus(
-            in_alignment.next_reference_name
-        )
-        lifted_aln.next_reference_start = (
-            in_alignment.next_reference_start + mate_subseq_start
-        )
+        mate_chrom, mate_subseq_start, mate_subseq_end = parse_locus(in_alignment.next_reference_name)
+        lifted_aln.next_reference_start = in_alignment.next_reference_start + mate_subseq_start
         lifted_aln.next_reference_name = mate_chrom
     return lifted_aln
 
@@ -122,12 +110,8 @@ def liftover(gene_bam: FilePath, genome_bam: FilePath, out_bam: str) -> None:
     :param str genome_bam: bam file path storing genome alignments
     :param str out_bam: output bam file path to write the lifted over alignments to
     """
-    with pysam.AlignmentFile(genome_bam) as genome_alignments, pysam.AlignmentFile(
-        gene_bam
-    ) as gene_alignments:
-        with pysam.AlignmentFile(
-            out_bam, "wb", template=genome_alignments
-        ) as out_bam_fh:
+    with pysam.AlignmentFile(genome_bam) as genome_alignments, pysam.AlignmentFile(gene_bam) as gene_alignments:
+        with pysam.AlignmentFile(out_bam, "wb", template=genome_alignments) as out_bam_fh:
             aln_count = 0
             for aln in gene_alignments:
                 if not aln.is_unmapped:
