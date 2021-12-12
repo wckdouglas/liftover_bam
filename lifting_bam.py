@@ -1,7 +1,9 @@
 import logging
 import re
+from pathlib import Path
+from typing import Tuple
 
-import pysam
+import pysam  # type: ignore
 from pydantic import FilePath, validate_arguments
 
 logging.basicConfig(level=logging.INFO)
@@ -13,7 +15,7 @@ NAME_REGEX = re.compile("^chr[0-9A-Za-z]+:[0-9]+-[0-9]+$|^[0-9]+:[0-9]+-[0-9]+$"
 @validate_arguments
 def make_ref_fasta(
     reference_fasta: FilePath, chrom: str, start: int, stop: int, padding: int = 5
-):
+) -> str:
     """
     extract sequence from reference fasta file
 
@@ -45,7 +47,7 @@ def make_ref_fasta(
 
 
 @validate_arguments
-def parse_locus(locus_string: str):
+def parse_locus(locus_string: str) -> Tuple[str, int, int]:
     """
     parsing a string to extract chromosome, start and end
 
@@ -64,7 +66,7 @@ def parse_locus(locus_string: str):
         return chrom, int(start), int(end)
 
 
-def liftover_alignment(header, in_alignment):
+def liftover_alignment(header, in_alignment):  # type: ignore
     """
     liftover a pysam alignedsegment
     we only support lifting the whole segment by changing the chromosome name and shifting the start position to the right
@@ -95,7 +97,7 @@ def liftover_alignment(header, in_alignment):
 
 
 @validate_arguments
-def liftover(gene_bam: FilePath, genome_bam: FilePath, out_bam: str):
+def liftover(gene_bam: FilePath, genome_bam: FilePath, out_bam: str) -> None:
     """
     Lifting alignments mapping to gene segments to whole genome
 
@@ -126,4 +128,4 @@ def liftover(gene_bam: FilePath, genome_bam: FilePath, out_bam: str):
 
 
 if __name__ == "__main__":
-    liftover("alignments/ref1.bam", "alignments/ref2.bam", "out.bam")
+    liftover(Path("alignments/ref1.bam"), Path("alignments/ref2.bam"), "out.bam")

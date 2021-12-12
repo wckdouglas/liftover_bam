@@ -44,3 +44,7 @@ jobs:
       - name: Unit test
         run: |
           poetry run pytest -l  -rPap -vvv -p no:warnings
+        
+      - name: type check
+        run: |
+          mypy lifting_bam.py
