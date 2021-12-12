@@ -86,13 +86,23 @@ def liftover_alignment(header, in_alignment):  # type: ignore
     lifted_aln.query_name = in_alignment.query_name
     lifted_aln.query_sequence = in_alignment.seq
     lifted_aln.qual = in_alignment.qual
-    lifted_aln.reference_start = in_alignment.reference_start + start - 1
+    lifted_aln.reference_start = in_alignment.reference_start + start
     lifted_aln.cigar = in_alignment.cigar
     lifted_aln.flag = in_alignment.flag
     lifted_aln.mapping_quality = in_alignment.mapping_quality
     lifted_aln.template_length = in_alignment.template_length
     for tag_id, tag_value in in_alignment.tags:
         lifted_aln.set_tag(tag_id, tag_value)
+
+    # for paired end
+    if in_alignment.next_reference_name:
+        mate_chrom, mate_subseq_start, mate_subseq_end = parse_locus(
+            in_alignment.next_reference_name
+        )
+        lifted_aln.next_reference_start = (
+            in_alignment.next_reference_start + mate_subseq_start
+        )
+        lifted_aln.next_reference_name = mate_chrom
     return lifted_aln
 
 

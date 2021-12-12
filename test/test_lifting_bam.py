@@ -170,7 +170,14 @@ def test_parse_locus_bad_input(test_case, locus_string):
     ), f"Didn't catch {test_case}"
 
 
-def make_alignment(subseq_chrom, subseq_start, start, header):
+def make_alignment(
+    subseq_chrom,
+    subseq_start,
+    start,
+    header,
+    mate_reference_name=None,
+    mate_reference_start=None,
+):
     subseq_coordinate = f"{subseq_chrom}:{subseq_start}-{subseq_start+100}"
     header_dict = OrderedDict(
         [
@@ -191,15 +198,37 @@ def make_alignment(subseq_chrom, subseq_start, start, header):
     mock_alignment.cigar = [(0, 10)]
     mock_alignment.flag = 0
     mock_alignment.mapping_quality = 60
+    mock_alignment.next_reference_name = mate_reference_name
+    mock_alignment.in_alignment.next_reference_start = mate_reference_start
     return mock_alignment
 
 
 @pytest.mark.parametrize(
-    "subseq_chrom, subseq_start, start",
-    [("chr1", 10, 10), ("chr2", 20, 5), ("chr3", 30, 12)],
+    "subseq_chrom, subseq_start, start, mate_reference_name, mate_reference_start",
+    [
+        ("chr1", 10, 10, None, None),
+        ("chr1", 10, 10, , 12),
+        ("chr2", 20, 5, None, None),
+        ("chr3", 30, 12, None, None),
+
+    ],
 )
-def test_liftover_alignment(mock_header, subseq_chrom, subseq_start, start):
-    alignment = make_alignment(subseq_chrom, subseq_start, start, mock_header)
+def test_liftover_alignment(
+    mock_header,
+    subseq_chrom,
+    subseq_start,
+    start,
+    mate_reference_name,
+    mate_reference_start,
+):
+    alignment = make_alignment(
+        subseq_chrom,
+        subseq_start,
+        start,
+        mock_header,
+        mate_reference_name=mate_reference_name,
+        mate_reference_start=mate_reference_start,
+    )
     lifted_alignment = liftover_alignment(mock_header, alignment)
     assert lifted_alignment.reference_name == subseq_chrom
-    assert lifted_alignment.reference_start == start + subseq_start - 1
+    assert lifted_alignment.reference_start == start + subseq_start
