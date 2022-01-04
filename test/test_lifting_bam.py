@@ -1,11 +1,11 @@
 import os
 import sys
 from collections import OrderedDict
+from typing import Dict
+from unittest.mock import patch
 
 import pysam
 import pytest
-from typing import Dict
-from unittest.mock import patch
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from lifting_bam import NAME_REGEX, liftover_alignment, make_ref_fasta, parse_locus
