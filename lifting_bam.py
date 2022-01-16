@@ -103,7 +103,7 @@ def liftover_alignment(header, in_alignment):  # type: ignore
 
 @validate_arguments
 def liftover(
-    gene_bam: FilePath, genome_bam: FilePath, out_bam: constr(regex=".bam$")
+    gene_bam: FilePath, genome_bam: FilePath, out_bam: constr(regex=r".*.bam$")
 ) -> None:
     """
     Lifting alignments mapping to gene segments to whole genome
