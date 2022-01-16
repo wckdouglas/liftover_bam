@@ -31,7 +31,7 @@ jobs:
 
       - name: Install bwa/samtools
         run: |
-          sudo apt-get install -y bwa samtools
+          sudo apt-get update && sudo apt-get install -y bwa samtools
 
       - name: Install dependencies
         run: |
