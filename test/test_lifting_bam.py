@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pysam
 import pytest
+from pydantic import ValidationError
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from lifting_bam import NAME_REGEX, liftover_alignment, make_ref_fasta, parse_locus
@@ -162,12 +163,9 @@ def test_parse_locus(chrom, start, end):
     ],
 )
 def test_parse_locus_bad_input(test_case, locus_string):
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValidationError) as e:
         parse_locus(locus_string)
-    assert (
-        f"reference name is not in the pattern of {NAME_REGEX.pattern}: {locus_string}"
-        in str(e)
-    ), f"Didn't catch {test_case}"
+    assert f"string does not match regex" in str(e), f"Didn't catch {test_case}"
 
 
 def make_alignment(

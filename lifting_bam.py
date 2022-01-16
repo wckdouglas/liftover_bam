@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Tuple
 
 import pysam  # type: ignore
-from pydantic import FilePath, validate_arguments
+from pydantic import FilePath, constr, validate_arguments
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("Liftover")
@@ -47,7 +47,7 @@ def make_ref_fasta(
 
 
 @validate_arguments
-def parse_locus(locus_string: str) -> Tuple[str, int, int]:
+def parse_locus(locus_string: constr(regex=NAME_REGEX.pattern)) -> Tuple[str, int, int]:
     """
     parsing a string to extract chromosome, start and end
 
@@ -56,14 +56,9 @@ def parse_locus(locus_string: str) -> Tuple[str, int, int]:
     :rtype: Tuple(str, int, int)
     """
     locus_string = str(locus_string)
-    if not NAME_REGEX.search(locus_string):
-        raise ValueError(
-            f"reference name is not in the pattern of {NAME_REGEX.pattern}: {locus_string}"
-        )
-    else:
-        chrom, coordinates = locus_string.split(":")
-        start, end = coordinates.split("-")
-        return chrom, int(start), int(end)
+    chrom, coordinates = locus_string.split(":")
+    start, end = coordinates.split("-")
+    return chrom, int(start), int(end)
 
 
 def liftover_alignment(header, in_alignment):  # type: ignore
@@ -107,7 +102,9 @@ def liftover_alignment(header, in_alignment):  # type: ignore
 
 
 @validate_arguments
-def liftover(gene_bam: FilePath, genome_bam: FilePath, out_bam: str) -> None:
+def liftover(
+    gene_bam: FilePath, genome_bam: FilePath, out_bam: constr(regex=".bam$")
+) -> None:
     """
     Lifting alignments mapping to gene segments to whole genome
 
