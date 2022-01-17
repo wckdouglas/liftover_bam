@@ -1,17 +1,19 @@
 import logging
 import re
 from pathlib import Path
-from typing import Tuple
+from typing import Annotated, Tuple  # type: ignore
 
 import pysam  # type: ignore
-from pydantic import ConstrainedStr, FilePath, constr, validate_arguments
+from pydantic import FilePath, constr, validate_arguments
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("Liftover")
 
 NAME_REGEX = re.compile("^chr[0-9A-Za-z]+:[0-9]+-[0-9]+$|^[0-9]+:[0-9]+-[0-9]+$")
-BamFileName: ConstrainedStr = constr(regex=r".*.bam$")
-LocusString: ConstrainedStr = constr(regex=NAME_REGEX.pattern)
+BamFileName: Annotated[str, constr(regex=r".*.bam$")] = constr(regex=r".*.bam$")
+LocusString: Annotated[str, constr(regex=NAME_REGEX.pattern)] = constr(
+    regex=NAME_REGEX.pattern
+)
 
 
 @validate_arguments
