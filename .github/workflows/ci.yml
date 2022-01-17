@@ -47,4 +47,4 @@ jobs:
         
       - name: type check
         run: |
-          poetry run mypy lifting_bam.py
+          poetry run mypy .

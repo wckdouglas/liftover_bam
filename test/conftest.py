@@ -2,7 +2,7 @@ from collections import OrderedDict
 from pathlib import Path
 from typing import Dict
 
-import pysam
+import pysam  # type: ignore
 import pytest
 
 TEST_DIRECTORY = Path(__file__).parent

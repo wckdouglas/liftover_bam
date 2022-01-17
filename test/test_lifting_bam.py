@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from conftest import (
-    TEST_DIRECTORY,
     PysamFakeBam,
     PysamFakeFasta,
     mock_alignment,
