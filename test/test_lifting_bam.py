@@ -1,35 +1,20 @@
 import os
 import sys
-from collections import OrderedDict
-from typing import Dict
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-import pysam
 import pytest
+from conftest import (
+    TEST_DIRECTORY,
+    PysamFakeBam,
+    PysamFakeFasta,
+    mock_alignment,
+    mock_bam_header,
+    mock_subseq_alignment,
+)
 from pydantic import ValidationError
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from lifting_bam import NAME_REGEX, liftover_alignment, make_ref_fasta, parse_locus
-
-
-class FakeFastaFile:
-    def __init__(self, seqs: Dict):
-        self.seqs = seqs
-
-    def fetch(self, chrom, start, end):
-        return self.seqs[chrom][start:end]
-
-    def get_reference_length(self, chrom):
-        return len(self.seqs[chrom])
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        return self
-
-    def close(self):
-        return self
+from lifting_bam import liftover, liftover_alignment, make_ref_fasta, parse_locus
 
 
 @pytest.mark.parametrize(
@@ -57,7 +42,7 @@ class FakeFastaFile:
 )
 def test_make_ref_fasta(seqs, chrom, start, stop, pad, expected_name, expected_seq):
     expected_out = f">{expected_name}\n{expected_seq}"
-    with patch("lifting_bam.pysam.Fastafile", return_value=FakeFastaFile(seqs)):
+    with patch("lifting_bam.pysam.Fastafile", return_value=PysamFakeFasta(seqs)):
         assert (
             make_ref_fasta(__file__, chrom=chrom, start=start, stop=stop, padding=pad)
             == expected_out
@@ -100,46 +85,11 @@ def test_make_ref_fasta_error(
     test_case, seqs, chrom, start, stop, pad, expected_error_message
 ):
     with patch(
-        "lifting_bam.pysam.Fastafile", return_value=FakeFastaFile(seqs)
+        "lifting_bam.pysam.Fastafile", return_value=PysamFakeFasta(seqs)
     ), pytest.raises(ValueError) as e:
         make_ref_fasta(__file__, chrom=chrom, start=start, stop=stop, padding=pad)
 
     assert expected_error_message in str(e), f"Fail to capture {test_case}"
-
-
-@pytest.fixture(scope="module")
-def mock_header():
-    header_dict = OrderedDict(
-        [
-            (
-                "SQ",
-                [
-                    {"SN": "chr1", "LN": 34},
-                    {"SN": "chr2", "LN": 33},
-                    {"SN": "chr3", "LN": 76},
-                ],
-            ),
-            (
-                "PG",
-                [
-                    {
-                        "ID": "bwa",
-                        "PN": "bwa",
-                        "VN": "0.7.17-r1198-dirty",
-                        "CL": "bwa mem -A 1 -T 5 -k4 ref/ref2.fa query.fa",
-                    },
-                    {
-                        "ID": "samtools",
-                        "PN": "samtools",
-                        "PP": "bwa",
-                        "VN": "1.13",
-                        "CL": "samtools view -b",
-                    },
-                ],
-            ),
-        ]
-    )
-    return pysam.AlignmentHeader.from_dict(header_dict)
 
 
 @pytest.mark.parametrize(
@@ -168,39 +118,6 @@ def test_parse_locus_bad_input(test_case, locus_string):
     assert f"string does not match regex" in str(e), f"Didn't catch {test_case}"
 
 
-def make_alignment(
-    subseq_chrom,
-    subseq_start,
-    start,
-    header,
-    mate_reference_start=None,
-):
-    subseq_coordinate = f"{subseq_chrom}:{subseq_start}-{subseq_start+100}"
-    header_dict = OrderedDict(
-        [
-            (
-                "SQ",
-                [
-                    {"SN": subseq_coordinate, "LN": subseq_start + 100},
-                ],
-            ),
-        ]
-    )
-    header = pysam.AlignmentHeader.from_dict(header_dict)
-    mock_alignment = pysam.AlignedSegment(header)
-    mock_alignment.reference_name = subseq_coordinate
-    mock_alignment.query_name = "aln1"
-    mock_alignment.query_sequence = "A" * 10
-    mock_alignment.reference_start = start
-    mock_alignment.cigar = [(0, 10)]
-    mock_alignment.flag = 0
-    mock_alignment.mapping_quality = 60
-    if mate_reference_start is not None:
-        mock_alignment.next_reference_name = subseq_coordinate
-        mock_alignment.next_reference_start = mate_reference_start
-    return mock_alignment
-
-
 @pytest.mark.parametrize(
     "test_case,subseq_chrom, subseq_start, start, mate_reference_start",
     [
@@ -216,11 +133,10 @@ def test_liftover_alignment(
     start,
     mate_reference_start,
 ):
-    alignment = make_alignment(
+    alignment = mock_subseq_alignment(
         subseq_chrom,
         subseq_start,
         start,
-        mock_header,
         mate_reference_start=mate_reference_start,
     )
     lifted_alignment = liftover_alignment(mock_header, alignment)
@@ -235,3 +151,46 @@ def test_liftover_alignment(
         assert (
             lifted_alignment.next_reference_name == subseq_chrom
         ), f"Failed for {test_case}"
+
+
+def test_liftover(mock_header):
+    gene_bam_header = mock_bam_header([("chr1:1-100", 100)])
+    in_gene_alignment = mock_alignment(
+        header=gene_bam_header,
+        reference_name="chr1:1-100",
+        query_name="aln1",
+        query_sequence="A" * 10,
+        reference_start=10,
+        cigar=[(0, 10)],
+        flag=0,
+        mapping_quality=30,
+    )
+
+    out_genome_alignment = mock_alignment(
+        header=mock_header,
+        reference_name="chr1",
+        query_name="aln1",
+        query_sequence="A" * 10,
+        reference_start=11,
+        cigar=[(0, 10)],
+        flag=0,
+        mapping_quality=30,
+    )
+
+    with patch("pysam.AlignmentFile") as pysam_bam:
+        mock_in_gene_bam = PysamFakeBam(gene_bam_header, [in_gene_alignment])
+        mock_in_genome_bam = PysamFakeBam(mock_header, [])
+        mock_out_bam = MagicMock()
+        pysam_bam.return_value.__enter__.side_effect = [
+            mock_in_genome_bam,
+            mock_in_gene_bam,
+            mock_out_bam,
+        ]
+        liftover(__file__, __file__, "/path/to/outbam")
+        mock_out_bam.write.assert_called_once_with(out_genome_alignment)
+
+
+def test_liftover_bad_name():
+    with pytest.raises(ValidationError) as e:
+        liftover(__file__, __file__, "out.sam")
+    assert f"string does not match regex" in str(e)
