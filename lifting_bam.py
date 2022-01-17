@@ -127,9 +127,9 @@ def liftover(
         ) as out_bam_fh:
             aln_count = 0
             for aln in gene_alignments:
-                if (
-                    not aln.is_unmapped or not aln.mate_is_unmapped
-                ):  # keeping the paired end alignments
+                if not aln.is_unmapped or (
+                    aln.is_paired and not aln.mate_is_unmapped
+                ):  # keeping unmapped paired end alignments
                     lifted_aln = liftover_alignment(genome_alignments.header, aln)
                     out_bam_fh.write(lifted_aln)
                     aln_count += 1
