@@ -1,5 +1,5 @@
-import os
 import sys
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,7 +12,7 @@ from conftest import (
 )
 from pydantic import ValidationError
 
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+sys.path.append(Path(__file__).parents[1].as_posix())
 from lifting_bam import liftover, liftover_alignment, make_ref_fasta, parse_locus
 
 
@@ -152,7 +152,7 @@ def test_liftover_alignment(
         ), f"Failed for {test_case}"
 
 
-def test_liftover(mock_header):
+def test_liftover(tmp_path, mock_header):
     gene_bam_header = mock_bam_header([("chr1:1-100", 100)])
     in_gene_alignment = mock_alignment(
         header=gene_bam_header,
@@ -176,6 +176,12 @@ def test_liftover(mock_header):
         mapping_quality=30,
     )
 
+    input_dir = tmp_path / "input"
+    input_dir.mkdir()
+    gene_bam = input_dir / "gene.bam"
+    gene_bam.write_text("gene")
+    genome_bam = input_dir / "genome.bam"
+    genome_bam.write_text("genome")
     with patch("pysam.AlignmentFile") as pysam_bam:
         mock_in_gene_bam = PysamFakeBam(gene_bam_header, [in_gene_alignment])
         mock_in_genome_bam = PysamFakeBam(mock_header, [])
@@ -185,11 +191,17 @@ def test_liftover(mock_header):
             mock_in_gene_bam,
             mock_out_bam,
         ]
-        liftover(__file__, __file__, "/path/to/outbam")
+        liftover(gene_bam=gene_bam, genome_bam=genome_bam, out_bam="/path/to/outbam")
         mock_out_bam.write.assert_called_once_with(out_genome_alignment)
 
 
-def test_liftover_bad_name():
+def test_liftover_bad_name(tmp_path):
+    input_dir = tmp_path / "input"
+    input_dir.mkdir()
+    gene_bam = input_dir / "gene.bam"
+    gene_bam.write_text("gene")
+    genome_bam = input_dir / "genome.bam"
+    genome_bam.write_text("genome")
     with pytest.raises(ValidationError) as e:
-        liftover(__file__, __file__, "out.sam")
+        liftover(gene_bam=gene_bam, genome_bam=genome_bam, out_bam="out.sam")
     assert f"string does not match regex" in str(e)
