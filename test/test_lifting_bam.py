@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pysam
 import pytest
 from conftest import (
     PysamFakeBam,
@@ -39,7 +42,25 @@ from lifting_bam import liftover, liftover_alignment, make_ref_fasta, parse_locu
         ),
     ],
 )
-def test_make_ref_fasta(seqs, chrom, start, stop, pad, expected_name, expected_seq):
+def test_make_ref_fasta(
+    seqs: dict[str, str],
+    chrom: str,
+    start: int,
+    stop: int,
+    pad: int,
+    expected_name: str,
+    expected_seq: str,
+):
+    """
+    test make_ref_fasta function
+    :param Dict[str, str] seqs: a dictionary of chromosome name and sequence
+    :param str chrom: chromosome name
+    :param int start: start position
+    :param int stop: stop position
+    :param int pad: padding length
+    :param str expected_name: expected reference name
+    :param str expected_seq: expected reference sequence
+    """
     expected_out = f">{expected_name}\n{expected_seq}"
     with patch("lifting_bam.pysam.Fastafile", return_value=PysamFakeFasta(seqs)):
         assert (
@@ -81,8 +102,23 @@ def test_make_ref_fasta(seqs, chrom, start, stop, pad, expected_name, expected_s
     ],
 )
 def test_make_ref_fasta_error(
-    test_case, seqs, chrom, start, stop, pad, expected_error_message
+    test_case: str,
+    seqs: dict[str, str],
+    chrom: str,
+    start: int,
+    stop: int,
+    pad: int,
+    expected_error_message: str,
 ):
+    """
+    :param str test_case: a string describing the test case
+    :param dict seqs: a dictionary of contig names and sequences
+    :param str chrom: the contig name
+    :param int start: the start position
+    :param int stop: the stop position
+    :param int pad: the padding
+    :param str expected_error_message: the expected error message
+    """
     with patch(
         "lifting_bam.pysam.Fastafile", return_value=PysamFakeFasta(seqs)
     ), pytest.raises(ValueError) as e:
@@ -95,7 +131,12 @@ def test_make_ref_fasta_error(
     "chrom,start,end",
     [("chr1", 10, 100), ("chr2", 1, 200), ("chr2", 0, 12)],
 )
-def test_parse_locus(chrom, start, end):
+def test_parse_locus(chrom: str, start: int, end: int):
+    """
+    :param str chrom: chromosome name
+    :param int start: start position
+    :param int end: end position
+    """
     out_chrom, out_start, out_end = parse_locus(f"{chrom}:{start}-{end}")
     assert out_chrom == chrom
     assert out_start == start
@@ -111,7 +152,11 @@ def test_parse_locus(chrom, start, end):
         ("Gene name", "TP53"),
     ],
 )
-def test_parse_locus_bad_input(test_case, locus_string):
+def test_parse_locus_bad_input(test_case: str, locus_string: str):
+    """
+    :param test_case: a string describing the test case
+    :param locus_string: a string that is not a valid locus
+    """
     with pytest.raises(ValidationError) as e:
         parse_locus(locus_string)
     assert f"string does not match regex" in str(e), f"Didn't catch {test_case}"
@@ -125,13 +170,21 @@ def test_parse_locus_bad_input(test_case, locus_string):
     ],
 )
 def test_liftover_alignment(
-    mock_header,
-    test_case,
-    subseq_chrom,
-    subseq_start,
-    start,
-    mate_reference_start,
+    mock_header: pysam.AlignmentHeader,
+    test_case: str,
+    subseq_chrom: str,
+    subseq_start: int,
+    start: int,
+    mate_reference_start: int,
 ):
+    """
+    :param pysam.AlignmentHeader  mock_header: pytest fixture
+    :param str test_case: a string describing the test case
+    :param str subseq_chrom: the chromosome of the subseq alignment
+    :param int subseq_start: the start position of the subseq alignment
+    :param int start: the start position of the lifted alignment
+    :param int mate_reference_start: the start position of the mate alignment
+    """
     alignment = mock_subseq_alignment(
         subseq_chrom,
         subseq_start,
@@ -153,6 +206,10 @@ def test_liftover_alignment(
 
 
 def test_liftover(tmp_path, mock_header):
+    """
+    :param tmp_path: pytest fixture
+    :param mock_header: pytest fixture
+    """
     gene_bam_header = mock_bam_header([("chr1:1-100", 100)])
     in_gene_alignment = mock_alignment(
         header=gene_bam_header,
@@ -196,6 +253,9 @@ def test_liftover(tmp_path, mock_header):
 
 
 def test_liftover_bad_name(tmp_path):
+    """
+    :param tmp_path: pytest fixture
+    """
     input_dir = tmp_path / "input"
     input_dir.mkdir()
     gene_bam = input_dir / "gene.bam"

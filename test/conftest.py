@@ -9,9 +9,10 @@ TEST_DIRECTORY = Path(__file__).parent
 
 
 class PysamFakeBam:
+    """a mock object that mimics the pysam.AlignmentFile object"""
+
     def __init__(self, header, reads):
         """
-        a mock object that mimics the pysam.AlignmentFile object
         :param pysam.AlignmentHeader header: header of the mock sam file
         :param List[pysam.AlignedSegment] reads: reads of the mock sam file
         """
@@ -32,6 +33,8 @@ class PysamFakeBam:
 
 
 class PysamFakeFasta:
+    """a mock object that mimics the pysam fasta file object"""
+
     def __init__(self, seqs: Dict):
         self.seqs = seqs
 
