@@ -1,10 +1,9 @@
-from __future__ import annotations
-
 import sys
 from pathlib import Path
+from typing import Dict
 from unittest.mock import MagicMock, patch
 
-import pysam
+import pysam  # type: ignore
 import pytest
 from conftest import (
     PysamFakeBam,
@@ -17,6 +16,13 @@ from pydantic import ValidationError
 
 sys.path.append(Path(__file__).parents[1].as_posix())
 from lifting_bam import liftover, liftover_alignment, make_ref_fasta, parse_locus
+
+
+@pytest.fixture(scope="function")
+def mock_ref_file(tmp_path):
+    ref_file = tmp_path / "ref.fa"
+    ref_file.touch()
+    return ref_file
 
 
 @pytest.mark.parametrize(
@@ -43,7 +49,8 @@ from lifting_bam import liftover, liftover_alignment, make_ref_fasta, parse_locu
     ],
 )
 def test_make_ref_fasta(
-    seqs: dict[str, str],
+    mock_ref_file,
+    seqs: Dict[str, str],
     chrom: str,
     start: int,
     stop: int,
@@ -64,7 +71,9 @@ def test_make_ref_fasta(
     expected_out = f">{expected_name}\n{expected_seq}"
     with patch("lifting_bam.pysam.Fastafile", return_value=PysamFakeFasta(seqs)):
         assert (
-            make_ref_fasta(__file__, chrom=chrom, start=start, stop=stop, padding=pad)
+            make_ref_fasta(
+                mock_ref_file, chrom=chrom, start=start, stop=stop, padding=pad
+            )
             == expected_out
         )
 
@@ -102,8 +111,9 @@ def test_make_ref_fasta(
     ],
 )
 def test_make_ref_fasta_error(
+    mock_ref_file,
     test_case: str,
-    seqs: dict[str, str],
+    seqs: Dict[str, str],
     chrom: str,
     start: int,
     stop: int,
@@ -122,7 +132,7 @@ def test_make_ref_fasta_error(
     with patch(
         "lifting_bam.pysam.Fastafile", return_value=PysamFakeFasta(seqs)
     ), pytest.raises(ValueError) as e:
-        make_ref_fasta(__file__, chrom=chrom, start=start, stop=stop, padding=pad)
+        make_ref_fasta(mock_ref_file, chrom=chrom, start=start, stop=stop, padding=pad)
 
     assert expected_error_message in str(e), f"Fail to capture {test_case}"
 
