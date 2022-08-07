@@ -14,8 +14,12 @@ from conftest import (
 )
 from pydantic import ValidationError
 
-sys.path.append(Path(__file__).parents[1].as_posix())
-from lifting_bam import liftover, liftover_alignment, make_ref_fasta, parse_locus
+from liftover_bam.lifting_bam import (
+    liftover,
+    liftover_alignment,
+    make_ref_fasta,
+    parse_locus,
+)
 
 
 @pytest.fixture(scope="function")
