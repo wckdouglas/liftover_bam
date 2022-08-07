@@ -1,12 +1,13 @@
 [tool.poetry]
 name = "liftover_bam"
 version = "0.1.0"
-description = ""
+description = "A simple module to liftover bam alignments"
 authors = ["Douglas Wu <wckdouglas@gmail.com>"]
 license = "MIT"
 packages = [
     {"include" = "liftover_bam"}
 ]
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"

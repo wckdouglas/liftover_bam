@@ -14,12 +14,7 @@ from conftest import (
 )
 from pydantic import ValidationError
 
-from liftover_bam.lifting_bam import (
-    liftover,
-    liftover_alignment,
-    make_ref_fasta,
-    parse_locus,
-)
+from liftover_bam import liftover, liftover_alignment, make_ref_fasta, parse_locus
 
 
 @pytest.fixture(scope="function")
@@ -73,7 +68,7 @@ def test_make_ref_fasta(
     :param str expected_seq: expected reference sequence
     """
     expected_out = f">{expected_name}\n{expected_seq}"
-    with patch("lifting_bam.pysam.Fastafile", return_value=PysamFakeFasta(seqs)):
+    with patch("liftover_bam.pysam.Fastafile", return_value=PysamFakeFasta(seqs)):
         assert (
             make_ref_fasta(
                 mock_ref_file, chrom=chrom, start=start, stop=stop, padding=pad
@@ -134,7 +129,7 @@ def test_make_ref_fasta_error(
     :param str expected_error_message: the expected error message
     """
     with patch(
-        "lifting_bam.pysam.Fastafile", return_value=PysamFakeFasta(seqs)
+        "liftover_bam.pysam.Fastafile", return_value=PysamFakeFasta(seqs)
     ), pytest.raises(ValueError) as e:
         make_ref_fasta(mock_ref_file, chrom=chrom, start=start, stop=stop, padding=pad)
 

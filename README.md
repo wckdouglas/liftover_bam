@@ -15,7 +15,7 @@ bwa mem gene.fa query.fq | samtools view -b > gene.bam
 
 So what if you want to put these alignments back to the genomic coordinates after that?
 
-The `lifting_bam.liftover` function is trying to solve this problem in pure python!
+The `liftover_bam.liftover` function is trying to solve this problem in pure python!
 
 ```
 gene_bam="gene.bam"
