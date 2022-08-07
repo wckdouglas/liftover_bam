@@ -17,7 +17,7 @@ alignments/ref2.bam: ref/ref2.fa.amb
 	bwa mem -A 1 -T 5 -k4  ref/ref2.fa query.fa | samtools view -b > alignments/ref2.bam
 
 out.bam: alignments/ref1.bam alignments/ref2.bam
-	poetry run python lifting_bam.py	
+	poetry run python liftover_bam/__init__.py	
 
 .PHONY: test
 test: out.bam
