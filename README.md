@@ -1,6 +1,6 @@
 # Lifting over bam #
 
-[![poetry CI](https://github.com/wckdouglas/liftover_bam/actions/workflows/ci.yml/badge.svg)](https://github.com/wckdouglas/liftover_bam/actions/workflows/ci.yml)
+[![poetry CI](https://github.com/wckdouglas/liftover_bam/actions/workflows/ci.yml/badge.svg)](https://github.com/wckdouglas/liftover_bam/actions/workflows/ci.yml) [![PyPI version](https://badge.fury.io/py/liftover-bam.svg)](https://badge.fury.io/py/liftover-bam)
 
 Sometimes for amplicon sequencings, we would like to map reads to the amplicon sequence only but bringing them back to genomic coordinates for easy variant calling and viewing.
 
